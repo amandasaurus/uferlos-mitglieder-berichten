@@ -32,7 +32,7 @@ for member in members:
         abteilungen_fractional_count[ab][member['Beitragssätze']] += 1.0/len(member['Abteilungen List'])
 
 
-with open("report-tables.txt", 'w') as out:
+with open("bericht-tabellen.txt", 'w') as out:
     out.write("\nAbteilung Mitgliederzahl, doppel\n")
     for ab in alle_abteilungen:
         out.write("{:>20}   gesamt {:>2d}, Halle Fö: {:>2d}, Halle N: {:>2d}, Halle erm.: {:>2d}, Outdoor Norm.: {:>2d}, Outdoor erm.: {:>2d}\n".format(
@@ -58,7 +58,7 @@ with open("report-tables.txt", 'w') as out:
             ))
 
 membership_beitraege = {'Outdoor ermäßigt': 20.00, 'Halle ermäßigt': 66.00, 'Halle Förderm.': 0.00, 'Outdoor Normaltarif': 36.00, 'Halle Normaltarif': 120.00}
-with open("report-lists.txt", 'w') as out:
+with open("bericht-listen.txt", 'w') as out:
     for ab in alle_abteilungen:
         out.write(f"\n\n{ab} Abteilung\n")
         out.write("{} Mitglieder\n".format(abteilungen_membership_count[ab]['Alle']))
