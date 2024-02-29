@@ -32,7 +32,7 @@ for member in members:
         abteilungen_fractional_count[ab][member['Beitragssätze']] += 1.0/len(member['Abteilungen List'])
 
 
-print("\nAbteilung MItgliederzahl, doppel")
+print("\nAbteilung Mitgliederzahl, doppel")
 for ab in alle_abteilungen:
     print("{:>20}   gesamt {:>2d}, Halle Fö: {:>2d}, Halle N: {:>2d}, Halle erm.: {:>2d}, Outdoor Norm.: {:>2d}, Outdoor erm.: {:>2d}".format(
         ab,
