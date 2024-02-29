@@ -69,4 +69,4 @@ for ab in alle_abteilungen:
         einkommen = membership_beitraege[t]*abteilungen_fractional_count[ab][t]
         print("  {0:.1f} {1} Mitgliederteil ( = {2:.2f}€ × {0:.1f} = {3:.2f}€ )".format(abteilungen_fractional_count[ab][t], t, membership_beitraege[t], einkommen ))
         gesamt += einkommen
-    print(f"Gesamt: {gesamt:.2f}€")
+    print("Gesamt: {:.2f}€ + {:.2f} Halle Förderm.".format(gesamt, abteilungen_fractional_count[ab]['Halle Förderm.']))
