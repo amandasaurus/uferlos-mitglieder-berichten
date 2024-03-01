@@ -72,3 +72,21 @@ with open("bericht-listen.txt", 'w') as out:
             out.write("  {0:.2f} {1} Mitgliederteil ( = {2:.2f}€ × {0:.2f} = {3:.2f}€ )\n".format(abteilungen_fractional_count[ab][t], t, membership_beitraege[t], einkommen ))
             gesamt += einkommen
         out.write("Gesamt: {:.2f}€ + {:.2f} Halle Förderm.\n".format(gesamt, abteilungen_fractional_count[ab]['Halle Förderm.']))
+
+res = defaultdict(int)
+for m in members:
+    num_abteilungen = len(m['Abteilungen List'])
+    res[num_abteilungen] += 1
+
+res = sorted(list(res.items()))
+for (num_abteilungen, num_mitglieder) in res:
+    print(f"{num_mitglieder:>3d} Mitglied(er) sind in {num_abteilungen:>1} Abteilung(en)")
+
+ueber3s = []
+for m in members:
+    num_abteilungen = len(m['Abteilungen List'])
+    if num_abteilungen > 3:
+        ueber3s.append((num_abteilungen, "{:>20s} ist in {:1} Abteilungen: {}".format(m['Name'], num_abteilungen, m['Abteilungen'])))
+
+ueber3s.sort()
+print("\n".join(x[1] for x in ueber3s))
