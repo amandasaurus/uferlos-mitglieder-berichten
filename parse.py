@@ -68,15 +68,38 @@ for member in members:
 with open("bericht-listen.adoc", 'w') as out:
     out.write("= Uferlos Mitglieder teil\n")
     out.write(":table-caption!:\n")
+    out.write("\n\nQuelle-Code: https://github.com/amandasaurus/uferlos-mitglieder-berichten\n")
+
+    out.write(f"\n\n== Zusammenfassung\n")
+    for (abt_name, ab) in abteilungen.items():
+        out.write("\n\n=== {}\n".format(abt_name))
+        zusammenfassung = []
+        for t in membership_types:
+            bt = ab['Beitrag'][t]
+            if bt['Mitglieder Zahl'] > 0:
+                zusammenfassung.append("{} × {}".format(bt['Mitglieder Zahl'], t))
+        out.write(", ".join(zusammenfassung))
+
+        out.write("\n[cols=\">1,>1,>1,>1\",options=unbreakable]\n[%autowidth]\n|===\n".format(abt_name=abt_name))
+        out.write("|Beitrag Name |Zahl |Beitrag Kost| Gesamt Einkommen\n\n")
+        for t in membership_types:
+            bt = ab['Beitrag'][t]
+            out.write(locale.format_string(
+                "|%s\n|%.5f\n|%3d€\n|%.2f€\n",
+                (t, bt['Mitgliederteil'], membership_beitraege[t], bt['Einkommen']),
+                grouping=True
+                ))
+        out.write(locale.format_string("|*Gesamt*\n|*%.2f*\n|\n|*%.2f€*\n|===\n", (ab['Mitgliederteil'], ab['Einkommen']), grouping=True))
+
 
     for (abt_name, ab) in abteilungen.items():
         out.write(f"\n<<<\n== {abt_name} Abteilung\n")
-        out.write("\n[cols=\">1,1\"]\n.Alle Mitglieder\n[%autowidth]\n|===\n")
+        out.write("\n[cols=\">1,1\"]\n.Wer hat gekreuzt?\n[%autowidth]\n|===\n")
         out.write("|Zahl (Alle) |Beitrag\n\n")
         for t in membership_types:
             bt = ab['Beitrag'][t]
             out.write(fmt("|%3d\n|%s\n", (bt['Mitglieder Zahl'], t)))
-        out.write("|*{}*\n|*Gesamt alle*\n|===\n".format(ab['Mitglieder Zahl']))
+        out.write("|*{}*\n|*Gesamt gekreuzt*\n|===\n".format(ab['Mitglieder Zahl']))
 
         out.write("\n[cols=\">1,>1,>1,>1\"]\n.Geteilte Mitglieder\n[%autowidth]\n|===\n")
         out.write("|Beitrag Name |Zahl |Beitrag Kost| Gesamt Einkommen\n\n")
