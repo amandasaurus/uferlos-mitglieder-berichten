@@ -9,17 +9,25 @@ from locale import format_string as fmt
 alle_abteilungen = set()
 membership_types = set()
 
-abteilungen = {}
-#abteilungen_membership_count = defaultdict(lambda: defaultdict(int))
-#abteilungen_fractional_count = defaultdict(lambda: defaultdict(float))
+halle_abteilungen = { 'Badminton', 'Federboa', 'Fußball', 'Schwimmen',
+        'Tischtennis', 'Volleyball Frauen', 'Volleyball Männer', 'Yoga' }
 
+outdoor_abteilungen = { 'Boule', 'Kegeln', 'Laufen', 'Motorrad',
+        'Nordic-Walking', 'Radsport', 'Ski', 'Wandern',
+        '(Keine Abteilung zugeordnet)'
+        }
+
+
+abteilungen = {}
 
 membership_beitraege = {
+    'Outdoor Normaltarif': 36.00,
     'Outdoor ermäßigt': 20.00,
+
+    'Halle Normaltarif': 120.00,
     'Halle ermäßigt': 66.00,
     'Halle Förderm.': 36.00,
-    'Outdoor Normaltarif': 36.00,
-    'Halle Normaltarif': 120.00,
+
     '(kein Beitrag)': 0.00
 }
 
@@ -31,6 +39,9 @@ with open("mitglieder.csv") as fp:
         if r['Ende Mitgliedschaft'] != '':
             continue
         r['Abteilungen List'] = [x.strip() for x in r['Abteilungen'].split(',')]
+        r['Zahl Hallen'] = sum(1 for abt in r['Abteilungen List'] if abt in halle_abteilungen)
+        r['Zahl Outdoor'] = sum(1 for abt in r['Abteilungen List'] if abt in outdoor_abteilungen)
+        r['Zahl Abteilungen'] = len(r['Abteilungen List'])
         alle_abteilungen.update(r['Abteilungen List'])
         membership_types.add(r['Beitragssätze'])
         r['Name'] = r['Vorname'] + ' ' + r['Nachname/Firma']
@@ -54,21 +65,63 @@ abteilungen = { name:
     for name in alle_abteilungen}
 
 for member in members:
-    for ab in member['Abteilungen List']:
-        einkommen = float(membership_beitraege[member['Beitragssätze']])/float(member['Abteilungzahl'])
+    halle_abt_einkommen = 0.00
+    if member['Beitragssätze'] == 'Outdoor Normaltarif':  # 36.00
+        if member['Zahl Hallen'] != 0:
+            print("Mitglieder {} hat {}, und ist in: {}".format(member['Name'], member['Beitragssätze'], member['Abteilungen']))
+            continue
 
+        outdoor_abt_einkommen = float(membership_beitraege[member['Beitragssätze']])/float(member['Zahl Outdoor'])
+        halle_abt_einkommen = 0.00
+
+    elif member['Beitragssätze'] == 'Outdoor ermäßigt': # 20.00
+        if member['Zahl Hallen'] != 0:
+            print("Mitglieder {} hat {}, und ist in: {}".format(member['Name'], member['Beitragssätze'], member['Abteilungen']))
+            continue
+        outdoor_abt_einkommen = membership_beitraege[member['Beitragssätze']]/float(member['Zahl Outdoor'])
+        halle_abt_einkommen = 0.00
+    elif member['Beitragssätze'] == 'Halle Normaltarif':  #  120.00,
+        if member['Zahl Hallen'] == 0:
+            print("Mitglieder {} hat {}, und ist in: {}".format(member['Name'], member['Beitragssätze'], member['Abteilungen']))
+            continue
+        outdoor_abt_einkommen = membership_beitraege['Outdoor Normaltarif']/member['Zahl Abteilungen']
+        halle_abt_einkommen = (membership_beitraege[member['Beitragssätze']] - (outdoor_abt_einkommen*member['Zahl Outdoor']))/member['Zahl Hallen']
+
+    elif member['Beitragssätze'] == 'Halle ermäßigt':  #  66.00
+        outdoor_abt_einkommen = membership_beitraege['Outdoor ermäßigt']/member['Zahl Abteilungen']
+        halle_abt_einkommen = (membership_beitraege[member['Beitragssätze']] - (outdoor_abt_einkommen*member['Zahl Outdoor']))/member['Zahl Hallen']
+    elif member['Beitragssätze'] == 'Halle Förderm.':  #  36.00
+        outdoor_abt_einkommen = membership_beitraege[member['Beitragssätze']]/float(member['Zahl Abteilungen'])
+        halle_abt_einkommen = membership_beitraege[member['Beitragssätze']]/float(member['Zahl Abteilungen'])
+    elif member['Beitragssätze'] == '(kein Beitrag)':  #   0.00
+        outdoor_abt_einkommen = membership_beitraege[member['Beitragssätze']]/float(member['Zahl Abteilungen'])
+        halle_abt_einkommen = membership_beitraege[member['Beitragssätze']]/float(member['Zahl Abteilungen'])
+    else: 
+        assert False, member
+
+    assert outdoor_abt_einkommen*member['Zahl Outdoor'] + halle_abt_einkommen*member['Zahl Hallen'] == membership_beitraege[member['Beitragssätze']], (member['Name'], member['Beitragssätze'], membership_beitraege[member['Beitragssätze']], member['Abteilungen'], outdoor_abt_einkommen, halle_abt_einkommen)
+
+    for ab in member['Abteilungen List']:
         abteilungen[ab]['Mitglieder Zahl'] += 1
         abteilungen[ab]['Mitgliederteil'] += 1.0/float(member['Abteilungzahl'])
-        abteilungen[ab]['Einkommen'] += einkommen
 
         abteilungen[ab]['Beitrag'][member['Beitragssätze']]['Mitglieder Zahl'] += 1
         abteilungen[ab]['Beitrag'][member['Beitragssätze']]['Mitgliederteil'] += 1.0/float(member['Abteilungzahl'])
-        abteilungen[ab]['Beitrag'][member['Beitragssätze']]['Einkommen'] += einkommen
+        if ab in halle_abteilungen:
+            abteilungen[ab]['Einkommen'] += halle_abt_einkommen
+        elif ab in outdoor_abteilungen:
+            abteilungen[ab]['Einkommen'] += outdoor_abt_einkommen
+        else:
+            assert False, ab
+            
 
 with open("bericht-listen.adoc", 'w') as out:
     out.write("= Uferlos Mitglieder teil\n")
     out.write(":table-caption!:\n")
+
     out.write("\n\nQuelle-Code: https://github.com/amandasaurus/uferlos-mitglieder-berichten\n")
+    out.write("\nHalle Abteilungen: {}\n\n".format(", ".join(sorted(halle_abteilungen))))
+    out.write("\nOutdoor Abteilungen: {}\n\n".format(", ".join(sorted(outdoor_abteilungen))))
 
     out.write(f"\n\n== Zusammenfassung\n")
     for (abt_name, ab) in abteilungen.items():
