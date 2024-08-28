@@ -57,11 +57,18 @@ with open(input_file) as fp:
         anzahl_hallen_max = max(anzahl_hallen_max, r['Anzahl Hallen'])
         anzahl_outdoor_max = max(anzahl_outdoor_max, r['Anzahl Outdoor'])
         alle_abteilungen.update(r['Abteilungen List'])
-        mitglieder_arten.add(r['Beitragssätze'])
         r['Name'] = r['Vorname'] + ' ' + r['Nachname/Firma']
         r['NachnameVorname'] = r['Nachname/Firma'] + ', ' + r['Vorname']
         r['Abteilungzahl'] = len(r['Abteilungen List'])
         r['Mitgliederteil'] = 1.0/float(len(r['Abteilungen List']))
+
+        # sanity check, if member is really halle or outdoor
+        if r['Anzahl Hallen'] == 0:
+            r['Beitragssätze'] = r['Beitragssätze'].replace("Halle", "Outdoor")
+        else:
+            r['Beitragssätze'] = r['Beitragssätze'].replace("Outdoor", "Halle")
+        mitglieder_arten.add(r['Beitragssätze'])
+
         mitglieder.append(r)
 
 mitglieder.sort(key=lambda m: m['NachnameVorname'])
@@ -207,15 +214,20 @@ with open("bericht-listen.adoc", 'w') as out:
 
     out.write(f"\n<<<\n== Zusammenfassung\n")
 
+    totalbeitragsum = 0
     out.write(f"\n\n=== Mitgleider pro Beitragssätze\n")
-    out.write("\n[cols=\">1,>1\"]\n[%autowidth]\n|===")
-    out.write("\n|Beitrag|Anzahl Mitgl.\n")
+    out.write("\n[cols=\">1,>1,>1\"]\n[%autowidth]\n|===")
+    out.write("\n|Beitrag|Anzahl Mitgl.|Total\n")
     for beitrage in [ 'Halle Normaltarif', 'Outdoor Normaltarif', 'Halle ermäßigt', 'Outdoor ermäßigt', 'Halle Förderm.', 'Outdoor Förderm.']:
-        out.write(fmt("\n|%s\n|%d\n", (beitrage, mitglieder_pro_beitrage[beitrage])))
+        beitragsum = mitglieder_pro_beitrage[beitrage] * mitglieder_beitraege[beitrage]
+        totalbeitragsum += beitragsum
+        out.write(fmt("\n|%s\n|%d|%d\n", (beitrage, mitglieder_pro_beitrage[beitrage], beitragsum)))
     out.write("\n|===")
+    out.write(fmt("\n\nTotal Beitrag: %.2f €", totalbeitragsum))
+    out.write("\n\n")
 
 
-
+    totalEinkommen = 0
     for (abt_name, abt) in abteilungen.items():
         out.write("\n".format(abt_name))
         out.write("\n[cols=\">1,>1\"]\n[%autowidth]\n|===")
@@ -223,7 +235,10 @@ with open("bericht-listen.adoc", 'w') as out:
         out.write(fmt("\n|Angekreuzt|%d", abt['Mitglieder Angekreuzt']))
         out.write(fmt("\n|Mitgliederteil|%.3f", abt['Mitgliederteil']))
         out.write(fmt("\n|Einkommen|%.2f €", abt['Einkommen']))
+        totalEinkommen += abt['Einkommen']
         out.write("\n|===\n ")
+    out.write(fmt("\n\nTotal Einkommen (sollte gliech mit Total Beitrag sein): %.2f €", totalEinkommen))
+    out.write("\n\n")
 
     for (abt_name, abt) in abteilungen.items():
         out.write(f"\n<<<\n== {abt_name} Abteilung\n")
