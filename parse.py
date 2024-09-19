@@ -21,18 +21,23 @@ outdoor_abteilungen = { 'Boule', 'Kegeln', 'Laufen', 'Motorrad',
 
 abteilungen = {}
 
+halle_mult = 1.0;
+outdoor_mult = 1.0;
+
 mitglieder_beitraege = {
-    'Halle Normaltarif': 120.00,
-    'Outdoor Normaltarif': 36.00,
+    'Halle Normaltarif': 120.00 * halle_mult,
+    'Outdoor Normaltarif': 36.00 * outdoor_mult,
 
-    'Halle ermäßigt': 66.00,
-    'Outdoor ermäßigt': 20.00,
+    'Halle ermäßigt': 66.00 * halle_mult,
+    'Outdoor ermäßigt': 20.00 * outdoor_mult,
 
-    'Halle Förderm.': 36.00,
-    'Outdoor Förderm.': 36.00,
+    'Halle Förderm.': 36.00 * halle_mult,
+    'Outdoor Förderm.': 36.00 * outdoor_mult,
 
     '(kein Beitrag)': 0.00
 }
+
+
 
 probleme = []
 mitglieder = []
@@ -103,36 +108,36 @@ for anzahl_halle in range(0, 10):
 
         # Normaltarif
         if anzahl_outdoor > 0:
-            einkommen_outdoor_pro = (36.00 / (anzahl_halle+anzahl_outdoor))
+            einkommen_outdoor_pro = (mitglieder_beitraege['Outdoor Normaltarif'] / (anzahl_halle+anzahl_outdoor))
         else:
             einkommen_outdoor_pro = 0.00
         einkommen_outdoor_gesamt = einkommen_outdoor_pro * anzahl_outdoor
         if anzahl_halle > 0:
-            einkommen_halle_gesamt = 120.00 - einkommen_outdoor_gesamt
+            einkommen_halle_gesamt = mitglieder_beitraege['Halle Normaltarif'] - einkommen_outdoor_gesamt
             einkommen_halle_pro = einkommen_halle_gesamt / anzahl_halle
         einkommen_pro_abt['Halle Normaltarif'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
         einkommen_pro_abt['Outdoor Normaltarif'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
 
         # ermäßigt
         if anzahl_outdoor > 0:
-            einkommen_outdoor_pro = (20.00 / (anzahl_halle+anzahl_outdoor))
+            einkommen_outdoor_pro = (mitglieder_beitraege['Outdoor ermäßigt'] / (anzahl_halle+anzahl_outdoor))
         else:
             einkommen_outdoor_pro = 0.00
         einkommen_outdoor_gesamt = einkommen_outdoor_pro * anzahl_outdoor
         if anzahl_halle > 0:
-            einkommen_halle_gesamt = 66.00 - einkommen_outdoor_gesamt
+            einkommen_halle_gesamt = mitglieder_beitraege['Halle ermäßigt'] - einkommen_outdoor_gesamt
             einkommen_halle_pro = einkommen_halle_gesamt / anzahl_halle
         einkommen_pro_abt['Halle ermäßigt'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
         einkommen_pro_abt['Outdoor ermäßigt'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
 
         # Förderm
         if anzahl_outdoor > 0:
-            einkommen_outdoor_pro = (36.00 / (anzahl_halle+anzahl_outdoor))
+            einkommen_outdoor_pro = (mitglieder_beitraege['Outdoor Förderm.'] / (anzahl_halle+anzahl_outdoor))
         else:
             einkommen_outdoor_pro = 0.00
         einkommen_outdoor_gesamt = einkommen_outdoor_pro * anzahl_outdoor
         if anzahl_halle > 0:
-            einkommen_halle_gesamt = 36.00 - einkommen_outdoor_gesamt
+            einkommen_halle_gesamt = mitglieder_beitraege['Halle Förderm.'] - einkommen_outdoor_gesamt
             einkommen_halle_pro = einkommen_halle_gesamt / anzahl_halle
         einkommen_pro_abt['Halle Förderm.'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
         einkommen_pro_abt['Outdoor Förderm.'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
