@@ -18,6 +18,7 @@ outdoor_abteilungen = { 'Boule', 'Kegeln', 'Laufen', 'Motorrad',
         '(Keine Abteilung zugeordnet)'
         }
 
+alle_beitraege = [ 'Halle Normaltarif', 'Outdoor Normaltarif', 'Halle ermäßigt', 'Outdoor ermäßigt', 'Halle Förderm.', 'Outdoor Förderm.']
 
 abteilungen = {}
 
@@ -88,6 +89,10 @@ abteilungen = { name:
         }
     for name in alle_abteilungen}
 
+for beitrage in alle_beitraege:
+    for abt_name, abt in abteilungen.items():
+        abt['Mitglieder Angekreuzt '+beitrage] = 0
+
 einkommen_pro_abt = {
     'Halle Normaltarif': {},
     'Outdoor Normaltarif': {},
@@ -152,6 +157,7 @@ for mitglied in mitglieder:
     for abteilung_name in mitglied['Abteilungen List']:
         abteilung = abteilungen[abteilung_name]
         abteilung['Mitglieder Angekreuzt'] += 1
+        abteilung['Mitglieder Angekreuzt '+mitglied['Beitragssätze']] += 1
         abteilung['Mitgliederteil'] += (1.0/len(mitglied['Abteilungen List']))
         if abteilung['Name'] in halle_abteilungen:
             abteilung['Einkommen'] += mitglieder_einkommen_pro_abt[0]
@@ -223,7 +229,7 @@ with open("bericht-listen.adoc", 'w') as out:
     out.write(f"\n\n=== Mitgleider pro Beitragssätze\n")
     out.write("\n[cols=\">1,>1,>1\"]\n[%autowidth]\n|===")
     out.write("\n|Beitrag|Anzahl Mitgl.|Total\n")
-    for beitrage in [ 'Halle Normaltarif', 'Outdoor Normaltarif', 'Halle ermäßigt', 'Outdoor ermäßigt', 'Halle Förderm.', 'Outdoor Förderm.']:
+    for beitrage in alle_beitraege:
         beitragsum = mitglieder_pro_beitrage[beitrage] * mitglieder_beitraege[beitrage]
         totalbeitragsum += beitragsum
         out.write(fmt("\n|%s\n|%d|%d\n", (beitrage, mitglieder_pro_beitrage[beitrage], beitragsum)))
@@ -251,6 +257,10 @@ with open("bericht-listen.adoc", 'w') as out:
         out.write(fmt("\n|Angekreuzt|%d", abt['Mitglieder Angekreuzt']))
         out.write(fmt("\n|Mitgliederteil|%.3f", abt['Mitgliederteil']))
         out.write(fmt("\n|Einkommen|%.2f €", abt['Einkommen']))
+        for beitrage in alle_beitraege:
+            if abt['Mitglieder Angekreuzt '+beitrage] != 0:
+                out.write(fmt("\n|%s|%d", (beitrage, abt['Mitglieder Angekreuzt '+beitrage])))
+
         out.write("\n|===\n ")
 
         out.write("\n[cols=\"1,1,>1,>1,>1\"]\n[%autowidth]\n|===")
