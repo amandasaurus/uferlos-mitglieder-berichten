@@ -14,11 +14,11 @@ halle_abteilungen = { 'Badminton', 'Federboa', 'Fußball', 'Schwimmen',
         'Tischtennis', 'Volleyball Frauen', 'Volleyball Männer', 'Yoga' }
 
 outdoor_abteilungen = { 'Boule', 'Kegeln', 'Laufen', 'Motorrad',
-        'Nordic-Walking', 'Radsport', 'Ski', 'Wandern', 'Seniorensport',
+        'Nordic Walking', 'Radsport', 'Ski', 'Wandern', 'Seniorensport',
         '(Keine Abteilung zugeordnet)'
         }
 
-alle_beitraege = [ 'Halle Normaltarif', 'Outdoor Normaltarif', 'Halle ermäßigt', 'Outdoor ermäßigt', 'Halle Förderm.', 'Outdoor Förderm.']
+alle_beitraege = [ 'hal', 'out', 'hale', 'oute', 'half', 'outf']
 
 abteilungen = {}
 
@@ -26,14 +26,14 @@ halle_mult = 1.0;
 outdoor_mult = 1.0;
 
 mitglieder_beitraege = {
-    'Halle Normaltarif': 120.00 * halle_mult,
-    'Outdoor Normaltarif': 36.00 * outdoor_mult,
+    'hal': 120.00 * halle_mult,
+    'out': 36.00 * outdoor_mult,
 
-    'Halle ermäßigt': 66.00 * halle_mult,
-    'Outdoor ermäßigt': 20.00 * outdoor_mult,
+    'hale': 66.00 * halle_mult,
+    'oute': 20.00 * outdoor_mult,
 
-    'Halle Förderm.': 36.00 * halle_mult,
-    'Outdoor Förderm.': 36.00 * outdoor_mult,
+    'half': 36.00 * halle_mult,
+    'outf': 36.00 * outdoor_mult,
 
     '(kein Beitrag)': 0.00
 }
@@ -53,9 +53,15 @@ input_file = sys.argv[1]
 with open(input_file) as fp:
     rdr = csv.DictReader(fp)
     for r in rdr:
-        if r['Ende Mitgliedschaft'] != '':
+        if r['Date of leaving'] != '':
             continue
-        r['Abteilungen List'] = [x.strip() for x in r['Abteilungen'].split(',')]
+        r['Abteilungen List'] = []
+        if r['Abteilung 1:'] != '':
+            r['Abteilungen List'].append(r['Abteilung 1:'])
+        if r['Abteilung 2:'] != '':
+            r['Abteilungen List'].append(r['Abteilung 2:'])
+        if r['Abteilung 3:'] != '':
+            r['Abteilungen List'].append(r['Abteilung 3:'])
         r['Anzahl Hallen'] = sum(1 for abt in r['Abteilungen List'] if abt in halle_abteilungen)
         r['Anzahl Outdoor'] = sum(1 for abt in r['Abteilungen List'] if abt in outdoor_abteilungen)
         mitgleider_hallen_outdoor_zahl[(r['Anzahl Hallen'], r['Anzahl Outdoor'])] += 1
@@ -63,17 +69,18 @@ with open(input_file) as fp:
         anzahl_hallen_max = max(anzahl_hallen_max, r['Anzahl Hallen'])
         anzahl_outdoor_max = max(anzahl_outdoor_max, r['Anzahl Outdoor'])
         alle_abteilungen.update(r['Abteilungen List'])
-        r['Name'] = r['Vorname'] + ' ' + r['Nachname/Firma']
-        r['NachnameVorname'] = r['Nachname/Firma'] + ', ' + r['Vorname']
+        r['Name'] = r['Name']
+        r['NachnameVorname'] = r['Last name'] + ', ' + r['First name']
         r['Abteilungzahl'] = len(r['Abteilungen List'])
-        r['Mitgliederteil'] = 1.0/float(len(r['Abteilungen List']))
+        if len(r['Abteilungen List']) > 0:
+            r['Mitgliederteil'] = 1.0/float(len(r['Abteilungen List']))
 
         # sanity check, if member is really halle or outdoor
         if r['Anzahl Hallen'] == 0:
-            r['Beitragssätze'] = r['Beitragssätze'].replace("Halle", "Outdoor")
+            r['Group code'] = r['Group code'].replace("hal", "out")
         else:
-            r['Beitragssätze'] = r['Beitragssätze'].replace("Outdoor", "Halle")
-        mitglieder_arten.add(r['Beitragssätze'])
+            r['Group code'] = r['Group code'].replace("out", "hal")
+        mitglieder_arten.add(r['Group code'])
 
         mitglieder.append(r)
 
@@ -94,14 +101,14 @@ for beitrage in alle_beitraege:
         abt['Mitglieder Angekreuzt '+beitrage] = 0
 
 einkommen_pro_abt = {
-    'Halle Normaltarif': {},
-    'Outdoor Normaltarif': {},
+    'hal': {},
+    'out': {},
 
-    'Halle ermäßigt': {},
-    'Outdoor ermäßigt': {},
+    'hale': {},
+    'oute': {},
 
-    'Halle Förderm.': {},
-    'Outdoor Förderm.': {},
+    'half': {},
+    'outf': {},
 }
 
 for anzahl_halle in range(0, 10):
@@ -113,65 +120,65 @@ for anzahl_halle in range(0, 10):
 
         # Normaltarif
         if anzahl_outdoor > 0:
-            einkommen_outdoor_pro = (mitglieder_beitraege['Outdoor Normaltarif'] / (anzahl_halle+anzahl_outdoor))
+            einkommen_outdoor_pro = (mitglieder_beitraege['out'] / (anzahl_halle+anzahl_outdoor))
         else:
             einkommen_outdoor_pro = 0.00
         einkommen_outdoor_gesamt = einkommen_outdoor_pro * anzahl_outdoor
         if anzahl_halle > 0:
-            einkommen_halle_gesamt = mitglieder_beitraege['Halle Normaltarif'] - einkommen_outdoor_gesamt
+            einkommen_halle_gesamt = mitglieder_beitraege['hal'] - einkommen_outdoor_gesamt
             einkommen_halle_pro = einkommen_halle_gesamt / anzahl_halle
-        einkommen_pro_abt['Halle Normaltarif'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
-        einkommen_pro_abt['Outdoor Normaltarif'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
+        einkommen_pro_abt['hal'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
+        einkommen_pro_abt['out'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
 
         # ermäßigt
         if anzahl_outdoor > 0:
-            einkommen_outdoor_pro = (mitglieder_beitraege['Outdoor ermäßigt'] / (anzahl_halle+anzahl_outdoor))
+            einkommen_outdoor_pro = (mitglieder_beitraege['oute'] / (anzahl_halle+anzahl_outdoor))
         else:
             einkommen_outdoor_pro = 0.00
         einkommen_outdoor_gesamt = einkommen_outdoor_pro * anzahl_outdoor
         if anzahl_halle > 0:
-            einkommen_halle_gesamt = mitglieder_beitraege['Halle ermäßigt'] - einkommen_outdoor_gesamt
+            einkommen_halle_gesamt = mitglieder_beitraege['hale'] - einkommen_outdoor_gesamt
             einkommen_halle_pro = einkommen_halle_gesamt / anzahl_halle
-        einkommen_pro_abt['Halle ermäßigt'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
-        einkommen_pro_abt['Outdoor ermäßigt'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
+        einkommen_pro_abt['hale'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
+        einkommen_pro_abt['oute'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
 
         # Förderm
         if anzahl_outdoor > 0:
-            einkommen_outdoor_pro = (mitglieder_beitraege['Outdoor Förderm.'] / (anzahl_halle+anzahl_outdoor))
+            einkommen_outdoor_pro = (mitglieder_beitraege['outf'] / (anzahl_halle+anzahl_outdoor))
         else:
             einkommen_outdoor_pro = 0.00
         einkommen_outdoor_gesamt = einkommen_outdoor_pro * anzahl_outdoor
         if anzahl_halle > 0:
-            einkommen_halle_gesamt = mitglieder_beitraege['Halle Förderm.'] - einkommen_outdoor_gesamt
+            einkommen_halle_gesamt = mitglieder_beitraege['half'] - einkommen_outdoor_gesamt
             einkommen_halle_pro = einkommen_halle_gesamt / anzahl_halle
-        einkommen_pro_abt['Halle Förderm.'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
-        einkommen_pro_abt['Outdoor Förderm.'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
+        einkommen_pro_abt['half'][(anzahl_halle, anzahl_outdoor)] = (einkommen_halle_pro, einkommen_outdoor_pro)
+        einkommen_pro_abt['outf'][(anzahl_halle, anzahl_outdoor)] = (0.00, einkommen_outdoor_pro)
 
 for mitglied in mitglieder:
-    if mitglied['Beitragssätze'] not in einkommen_pro_abt:
-        probleme.append(("Mitglied \"{}\" hat unbekannter Beitrag: \"{}\"".format(mitglied['Name'], mitglied['Beitragssätze'])))
+    if mitglied['Group code'] not in einkommen_pro_abt or len(mitglied['Abteilungen List']) == 0:
+        probleme.append(("Mitglied \"{}\" hat unbekannter Beitrag: \"{}\"".format(mitglied['Name'], mitglied['Group code'])))
         continue
     anzahl_halle_outdoor = (mitglied['Anzahl Hallen'], mitglied['Anzahl Outdoor'])
-    mitglieder_einkommen_pro_abt = einkommen_pro_abt[mitglied['Beitragssätze']][anzahl_halle_outdoor]
+    mitglieder_einkommen_pro_abt = einkommen_pro_abt[mitglied['Group code']][anzahl_halle_outdoor]
 
     for abteilung_name in mitglied['Abteilungen List']:
         abteilung = abteilungen[abteilung_name]
         abteilung['Mitglieder Angekreuzt'] += 1
-        abteilung['Mitglieder Angekreuzt '+mitglied['Beitragssätze']] += 1
+        abteilung['Mitglieder Angekreuzt '+mitglied['Group code']] += 1
         abteilung['Mitgliederteil'] += (1.0/len(mitglied['Abteilungen List']))
         if abteilung['Name'] in halle_abteilungen:
             abteilung['Einkommen'] += mitglieder_einkommen_pro_abt[0]
-            abteilung['Mitglieder'].append((mitglied, mitglied['Beitragssätze'], anzahl_halle_outdoor, mitglieder_einkommen_pro_abt[0]))
+            abteilung['Mitglieder'].append((mitglied, mitglied['Group code'], anzahl_halle_outdoor, mitglieder_einkommen_pro_abt[0]))
         elif abteilung['Name'] in outdoor_abteilungen:
             abteilung['Einkommen'] += mitglieder_einkommen_pro_abt[1]
-            abteilung['Mitglieder'].append((mitglied, mitglied['Beitragssätze'], anzahl_halle_outdoor, mitglieder_einkommen_pro_abt[1]))
+            abteilung['Mitglieder'].append((mitglied, mitglied['Group code'], anzahl_halle_outdoor, mitglieder_einkommen_pro_abt[1]))
         else:
             assert False, abteilung
 
 
 mitglieder_pro_beitrage = defaultdict(int)
 for mitglied in mitglieder:
-    mitglieder_pro_beitrage[mitglied['Beitragssätze']] += 1
+    mitglieder_pro_beitrage[mitglied['Group code']] += 1
 
 
 with open("bericht-listen.adoc", 'w') as out:
@@ -191,27 +198,27 @@ with open("bericht-listen.adoc", 'w') as out:
 
     out.write("\n=== Nur Hallen")
     out.write("\n[cols=\">1,>1,>1,>1\"]\n[%autowidth]\n|===")
-    out.write("\n|Anz. Halle|Halle Normaltarif|Halle ermäßigt|Halle Förderm.")
+    out.write("\n|Anz. Halle|hal|hale|half")
     for anz_halle in range(1, anzahl_hallen_max+1):
         out.write(fmt("\n|%d", anz_halle))
-        out.write(fmt("\n|%.2f €", einkommen_pro_abt["Halle Normaltarif"][(anz_halle, 0)][0]))
-        out.write(fmt("\n|%.2f €", einkommen_pro_abt["Halle ermäßigt"][(anz_halle, 0)][0]))
-        out.write(fmt("\n|%.2f €", einkommen_pro_abt["Halle Förderm."][(anz_halle, 0)][0]))
+        out.write(fmt("\n|%.2f €", einkommen_pro_abt["hal"][(anz_halle, 0)][0]))
+        out.write(fmt("\n|%.2f €", einkommen_pro_abt["hale"][(anz_halle, 0)][0]))
+        out.write(fmt("\n|%.2f €", einkommen_pro_abt["half"][(anz_halle, 0)][0]))
     out.write("\n|===")
 
     out.write("\n=== Nur Outdoor")
     out.write("\n[cols=\">1,>1,>1,>1\"]\n[%autowidth]\n|===")
-    out.write("\n|Anz. Outdoor|Outdoor Normaltarif|Outdoor ermäßigt|Outdoor Förderm.")
+    out.write("\n|Anz. Outdoor|out|oute|outf")
     for anz_outdoor in range(1, anzahl_outdoor_max+1):
         out.write(fmt("\n|%d", anz_outdoor))
-        out.write(fmt("\n|%.2f €", einkommen_pro_abt["Outdoor Normaltarif"][(0, anz_outdoor)][1]))
-        out.write(fmt("\n|%.2f €", einkommen_pro_abt["Outdoor ermäßigt"][(0, anz_outdoor)][1]))
-        out.write(fmt("\n|%.2f €", einkommen_pro_abt["Outdoor Förderm."][(0, anz_outdoor)][1]))
+        out.write(fmt("\n|%.2f €", einkommen_pro_abt["out"][(0, anz_outdoor)][1]))
+        out.write(fmt("\n|%.2f €", einkommen_pro_abt["oute"][(0, anz_outdoor)][1]))
+        out.write(fmt("\n|%.2f €", einkommen_pro_abt["outf"][(0, anz_outdoor)][1]))
     out.write("\n|===")
 
     out.write("\n\n=== Hallen und Outdoor")
 
-    for beitraege in ['Halle Normaltarif', 'Halle ermäßigt', 'Halle Förderm.']:
+    for beitraege in ['hal', 'hale', 'half']:
         out.write(fmt("\n\n==== %s", beitraege))
         cols = ",".join([">1" for _ in range(0, anzahl_outdoor_max+1)])
         out.write("\n[cols=\">1,"+cols+"\"]\n[%autowidth]\n|===")
@@ -226,7 +233,7 @@ with open("bericht-listen.adoc", 'w') as out:
     out.write(f"\n<<<\n== Zusammenfassung\n")
 
     totalbeitragsum = 0
-    out.write(f"\n\n=== Mitgleider pro Beitragssätze\n")
+    out.write(f"\n\n=== Mitgleider pro Group code\n")
     out.write("\n[cols=\">1,>1,>1\"]\n[%autowidth]\n|===")
     out.write("\n|Beitrag|Anzahl Mitgl.|Total\n")
     for beitrage in alle_beitraege:
@@ -264,10 +271,10 @@ with open("bericht-listen.adoc", 'w') as out:
         out.write("\n|===\n ")
 
         out.write("\n[cols=\"1,1,>1,>1,>1\"]\n[%autowidth]\n|===")
-        out.write("\n|Name|Beitragssätze|Anz. H.|Anz. O.|Diese Abt.\n")
+        out.write("\n|Name|Group code|Anz. H.|Anz. O.|Diese Abt.\n")
         for mitglied in abt['Mitglieder']:
             out.write(fmt("\n|%s", mitglied[0]['Name']))
-            out.write(fmt("\n|%s (%.0f €)", (mitglied[0]['Beitragssätze'], mitglieder_beitraege[mitglied[0]['Beitragssätze']])))
+            out.write(fmt("\n|%s (%.0f €)", (mitglied[0]['Group code'], mitglieder_beitraege[mitglied[0]['Group code']])))
             out.write(fmt("\n|%d", mitglied[2][0]))
             out.write(fmt("\n|%d", mitglied[2][1]))
             out.write(fmt("\n|%.2f €", mitglied[3]))
